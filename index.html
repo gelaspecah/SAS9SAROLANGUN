@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Ujian SAS (90 Menit) - SMA Negeri 9 Sarolangun</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- HEADER SEKOLAH -->
+  <header class="bg-blue-900 text-white shadow-md px-4 py-3 flex items-center justify-between no-print">
+    <div>
+      <h1 class="text-base md:text-lg font-bold tracking-wide">PORTAL SUMATIF AKHIR SEMESTER (SAS)</h1>
+      <p class="text-xs text-blue-200">SMA Negeri 9 Sarolangun · Durasi Terkunci 90 Menit</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="bukaPanelPengawas()" class="bg-blue-800 hover:bg-blue-700 text-xs px-3 py-1.5 rounded border border-blue-600">
+        Panel Pengawas
+      </button>
+    </div>
+  </header>
+
+  <!-- 1. HALAMAN LOGIN PESERTA -->
+  <main id="view-login" class="flex-1 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-xl shadow-lg p-6 border border-slate-200">
+      <h2 class="text-xl font-bold text-slate-800 mb-1">Verifikasi Peserta Ujian</h2>
+      <p class="text-sm text-slate-500 mb-5">Durasi ujian ditetapkan 90 menit sejak sesi dimulai.</p>
+
+      <form id="form-login" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">NIS / Nomor Peserta</label>
+          <input type="text" id="input-nis" required placeholder="Contoh: 24251001"
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Nama Lengkap</label>
+          <input type="text" id="input-nama" required placeholder="Nama sesuai daftar hadir"
+            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium mb-1">Kelas</label>
+            <select id="input-kelas" required
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600">
+              <option value="">Pilih Kelas</option>
+              <option value="X E1">X E1</option>
+              <option value="X E2">X E2</option>
+              <option value="XI F1">XI F1</option>
+              <option value="XI F2">XI F2</option>
+              <option value="XII F1">XII F1</option>
+              <option value="XII F2">XII F2</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Token Ujian</label>
+            <input type="text" id="input-token" required placeholder="TOKEN"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm uppercase font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-600" />
+          </div>
+        </div>
+
+        <div id="login-error" class="hidden text-xs bg-red-50 text-red-700 border border-red-200 p-2.5 rounded-lg"></div>
+
+        <button type="submit" id="btn-mulai"
+          class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+          Mulai Ujian Sekarang
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- 2. HALAMAN UJIAN (GOOGLE FORM + TIMER 90 MENIT + PENGAWASAN) -->
+  <section id="view-exam" class="hidden flex-1 flex flex-col">
+    <div class="bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-semibold text-slate-800" id="lbl-peserta">-</span>
+        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-medium" id="lbl-mapel">-</span>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="lbl-timer" class="bg-slate-900 text-amber-300 px-3 py-1 rounded font-mono font-bold">
+          Sisa Waktu: 90:00
+        </span>
+        <span id="lbl-pelanggaran" class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded font-semibold">
+          Pelanggaran: 0 / 3
+        </span>
+        <button id="btn-selesai" onclick="konfirmasiSelesai()" disabled
+          class="bg-slate-300 text-slate-500 cursor-not-allowed px-3 py-1 rounded font-medium transition">
+          Terkunci (90 mnt)
+        </button>
+      </div>
+    </div>
+
+    <div class="relative flex-1 w-full bg-slate-200">
+      <iframe id="gform-frame" src="" class="w-full h-[calc(100vh-105px)] border-0">Memuat soal...</iframe>
+
+      <!-- OVERLAY WAKTU 90 MENIT SELESAI -->
+      <div id="timeup-overlay" class="hidden absolute inset-0 bg-slate-900/95 text-white flex items-center justify-center p-6 z-40">
+        <div class="max-w-md w-full bg-slate-800 border border-slate-700 rounded-xl p-6 text-center shadow-2xl">
+          <div class="text-4xl mb-2">⏱️</div>
+          <h3 class="text-xl font-bold mb-2">WAKTU UJIAN 90 MENIT BERAKHIR</h3>
+          <p class="text-sm text-slate-300 mb-5">
+            Durasi pelaksanaan ujian selama 90 menit telah selesai. Pastikan lembar jawaban telah dikirim (Submit) dan tutup sesi ujian.
+          </p>
+          <button onclick="tutupSesiWaktuHabis()"
+            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-sm">
+            Selesaikan & Kembali
+          </button>
+        </div>
+      </div>
+
+      <!-- OVERLAY TERKUNCI JIKA MELANGGAR -->
+      <div id="lock-overlay" class="hidden absolute inset-0 bg-red-950/95 text-white flex items-center justify-center p-6 z-50">
+        <div class="max-w-md w-full bg-red-900 border border-red-700 rounded-xl p-6 text-center shadow-2xl">
+          <div class="text-4xl mb-2">⚠️</div>
+          <h3 class="text-xl font-bold mb-2">LAYAR UJIAN TERKUNCI</h3>
+          <p class="text-sm text-red-100 mb-4" id="lock-reason">
+            Sistem mendeteksi Anda meninggalkan halaman ujian berulang kali. Lapor ke pengawas ruang untuk membuka kembali akses.
+          </p>
+          <div class="space-y-3 text-left">
+            <label class="block text-xs uppercase tracking-wider text-red-200">Kode Buka Kunci Pengawas</label>
+            <input type="password" id="input-unlock-pin" placeholder="Masukkan PIN Pengawas"
+              class="w-full px-3 py-2 rounded bg-white text-slate-900 text-sm font-mono" />
+            <button onclick="bukaKunciPeserta()"
+              class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded text-sm">
+              Buka Kunci Ujian
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. PANEL PENGAWAS & ADMIN -->
+  <section id="view-proctor" class="hidden flex-1 p-4 max-w-6xl w-full mx-auto space-y-4">
+    <div class="bg-white rounded-xl shadow p-4 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="text-lg font-bold">Dashboard Pengawas & Pengaturan Token</h2>
+        <p class="text-xs text-slate-500">Durasi baku ujian: 90 menit per sesi peserta · Sisa waktu diperbarui otomatis.</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="tutupPanelPengawas()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1.5 rounded text-xs font-medium">
+          Kembali ke Login
+        </button>
+        <button onclick="resetSemuaDataUjian()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-medium">
+          Reset Log Sesi
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-4 border border-slate-200">
+      <h3 class="text-sm font-bold mb-3">Tambah / Aktifkan Token Mata Pelajaran</h3>
+      <form id="form-token" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <input type="text" id="cfg-token" required placeholder="Kode Token (misal: PJOK12)"
+          class="border rounded-lg px-3 py-2 text-sm uppercase font-mono" />
+        <input type="text" id="cfg-mapel" required placeholder="Nama Mata Pelajaran"
+          class="border rounded-lg px-3 py-2 text-sm" />
+        <input type="url" id="cfg-url" required placeholder="Link Google Form (https://docs.google.com/forms/...)"
+          class="border rounded-lg px-3 py-2 text-sm" />
+        <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 py-2 text-sm font-semibold">
+          Simpan Token
+        </button>
+      </form>
+      <div id="list-tokens" class="mt-3 flex flex-wrap gap-2"></div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow border border-slate-200 overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead class="bg-slate-100 text-slate-700 border-b">
+          <tr>
+            <th class="p-3">NIS</th>
+            <th class="p-3">Nama Peserta</th>
+            <th class="p-3">Kelas</th>
+            <th class="p-3">Mapel</th>
+            <th class="p-3">Sisa Waktu (90 mnt)</th>
+            <th class="p-3">Pindah Tab</th>
+            <th class="p-3">Status</th>
+            <th class="p-3">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tabel-monitoring" class="divide-y divide-slate-100">
+          <tr><td colspan="8" class="p-4 text-center text-slate-400">Belum ada peserta masuk.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    // ==========================================
+    // 1. KONFIGURASI SUPABASE & ATURAN DURASI
+    // ==========================================
+    const SUPABASE_URL = "https://jjhonomzzfxjrzghxdii.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_LYK0U2cAPdFeOnGz84SGzg_7FsZl9YI";
+
+    const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const PIN_PENGAWAS = "9909";
+    const MAX_PELANGGARAN = 3;
+    const DURASI_MENIT = 90;
+    const DURASI_DETIK = DURASI_MENIT * 60;
+
+    let sesiAktif = null;
+    let jumlahPelanggaran = 0;
+    let ujianBerlangsung = false;
+    let jedaDeteksi = false;
+    let intervalTimer = null;
+    let waktuSelesaiEpoch = 0;
+    let durasiTerpenuhi = false;
+    let channelMonitoring = null;
+    let dataSesiPengawas = [];
+    let intervalTabelPengawas = null;
+
+    // ==========================================
+    // 2. LOGIKA LOGIN & TIMER 90 MENIT
+    // ==========================================
+    document.getElementById("form-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nis = document.getElementById("input-nis").value.trim();
+      const nama = document.getElementById("input-nama").value.trim();
+      const kelas = document.getElementById("input-kelas").value;
+      const token = document.getElementById("input-token").value.trim().toUpperCase();
+      const errBox = document.getElementById("login-error");
+      const btn = document.getElementById("btn-mulai");
+
+      errBox.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Memverifikasi Token...";
+
+      try {
+        const { data: dataToken, error: tokenErr } = await sbClient
+          .from("exam_tokens")
+          .select("*")
+          .eq("token", token)
+          .maybeSingle();
+
+        if (tokenErr) throw tokenErr;
+        if (!dataToken || !dataToken.aktif) {
+          throw new Error("Token tidak valid atau sesi ujian belum diaktifkan pengawas.");
+        }
+
+        const sessionKey = `${token}_${nis}`;
+        const { data: existing, error: sesiErr } = await sbClient
+          .from("exam_sessions")
+          .select("*")
+          .eq("session_key", sessionKey)
+          .maybeSingle();
+
+        if (sesiErr) throw sesiErr;
+
+        let startedAtMs = Date.now();
+
+        if (existing) {
+          if (existing.status === "SELESAI") {
+            throw new Error("NIS ini sudah menyelesaikan ujian pada sesi ini.");
+          }
+          jumlahPelanggaran = existing.violations || 0;
+          startedAtMs = existing.started_at ? new Date(existing.started_at).getTime() : Date.now();
+        } else {
+          jumlahPelanggaran = 0;
+          const nowIso = new Date(startedAtMs).toISOString();
+          const { error: insertErr } = await sbClient
+            .from("exam_sessions")
+            .insert({
+              session_key: sessionKey,
+              nis,
+              nama,
+              kelas,
+              token,
+              mapel: dataToken.mapel,
+              violations: 0,
+              status: "MENGERJAKAN",
+              started_at: nowIso,
+              logs: []
+            });
+          if (insertErr) throw insertErr;
+        }
+
+        let formUrl = dataToken.form_url;
+        if (!formUrl.includes("embedded=true")) {
+          formUrl += (formUrl.includes("?") ? "&" : "?") + "embedded=true";
+        }
+
+        waktuSelesaiEpoch = startedAtMs + (DURASI_DETIK * 1000);
+        sesiAktif = { sessionKey, nis, nama, kelas, mapel: dataToken.mapel };
+        mulaiTampilanUjian(formUrl);
+
+      } catch (err) {
+        errBox.textContent = err.message || "Gagal memverifikasi sesi ujian.";
+        errBox.classList.remove("hidden");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Mulai Ujian Sekarang";
+      }
+    });
+
+    function mulaiTampilanUjian(formUrl) {
+      document.getElementById("view-login").classList.add("hidden");
+      document.getElementById("view-exam").classList.remove("hidden");
+      document.getElementById("lbl-peserta").textContent = `${sesiAktif.nama} (${sesiAktif.kelas})`;
+      document.getElementById("lbl-mapel").textContent = sesiAktif.mapel;
+      document.getElementById("gform-frame").src = formUrl;
+
+      ujianBerlangsung = true;
+      perbaruiBadgePelanggaran();
+      jalankanTimer90Menit();
+
+      if (jumlahPelanggaran >= MAX_PELANGGARAN) {
+        kunciLayarUjian("Batas pelanggaran terlampaui sebelum sesi dilanjutkan.");
+      }
+    }
+
+    function jalankanTimer90Menit() {
+      if (intervalTimer) clearInterval(intervalTimer);
+
+      const tick = async () => {
+        const sisaDetik = Math.max(0, Math.floor((waktuSelesaiEpoch - Date.now()) / 1000));
+        const menit = Math.floor(sisaDetik / 60);
+        const detik = sisaDetik % 60;
+        const formatWaktu = `${String(menit).padStart(2, "0")}:${String(detik).padStart(2, "0")}`;
+
+        const lblTimer = document.getElementById("lbl-timer");
+        lblTimer.textContent = `Sisa Waktu: ${formatWaktu}`;
+
+        const btnSelesai = document.getElementById("btn-selesai");
+        if (sisaDetik > 0) {
+          btnSelesai.disabled = true;
+          btnSelesai.className = "bg-slate-300 text-slate-500 cursor-not-allowed px-3 py-1 rounded font-medium transition";
+          btnSelesai.textContent = `Terkunci (${formatWaktu})`;
+        } else if (!durasiTerpenuhi) {
+          durasiTerpenuhi = true;
+          btnSelesai.disabled = false;
+          btnSelesai.className = "bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded font-medium transition";
+          btnSelesai.textContent = "Selesai Ujian";
+          await selesaikanKarenaWaktuHabis();
+        }
+      };
+
+      tick();
+      intervalTimer = setInterval(tick, 1000);
+    }
+
+    async function selesaikanKarenaWaktuHabis() {
+      if (intervalTimer) clearInterval(intervalTimer);
+      ujianBerlangsung = false;
+      document.getElementById("gform-frame").src = "about:blank";
+      document.getElementById("timeup-overlay").classList.remove("hidden");
+
+      if (sesiAktif) {
+        await sbClient
+          .from("exam_sessions")
+          .update({
+            status: "SELESAI",
+            finished_at: new Date().toISOString()
+          })
+          .eq("session_key", sesiAktif.sessionKey);
+      }
+    }
+
+    function tutupSesiWaktuHabis() {
+      location.reload();
+    }
+
+    // ==========================================
+    // 3. DETEKSI PINDAH TAB & KELUAR FOKUS
+    // ==========================================
+    async function tambahLogSesi(sessionKey, payloadUpdate) {
+      const { data: current } = await sbClient
+        .from("exam_sessions")
+        .select("logs")
+        .eq("session_key", sessionKey)
+        .maybeSingle();
+
+      const logsBaru = Array.isArray(current?.logs) ? [...current.logs] : [];
+      if (payloadUpdate.newLog) {
+        logsBaru.push(payloadUpdate.newLog);
+      }
+
+      const updateData = { ...payloadUpdate };
+      delete updateData.newLog;
+      updateData.logs = logsBaru;
+
+      await sbClient
+        .from("exam_sessions")
+        .update(updateData)
+        .eq("session_key", sessionKey);
+    }
+
+    async function catatPelanggaran(alasan) {
+      if (!ujianBerlangsung || !sesiAktif || jedaDeteksi) return;
+
+      jedaDeteksi = true;
+      setTimeout(() => { jedaDeteksi = false; }, 1500);
+
+      jumlahPelanggaran++;
+      perbaruiBadgePelanggaran();
+
+      const waktu = new Date().toLocaleTimeString("id-ID");
+      const statusBaru = jumlahPelanggaran >= MAX_PELANGGARAN ? "TERKUNCI" : "MENGERJAKAN";
+
+      await tambahLogSesi(sesiAktif.sessionKey, {
+        violations: jumlahPelanggaran,
+        status: statusBaru,
+        newLog: `${waktu} - ${alasan}`
+      });
+
+      if (jumlahPelanggaran >= MAX_PELANGGARAN) {
+        kunciLayarUjian(`Terdeteksi ${jumlahPelanggaran}x keluar dari layar ujian (${alasan}).`);
+      } else {
+        alert(`PERINGATAN (${jumlahPelanggaran}/${MAX_PELANGGARAN}): Dilarang berpindah tab atau keluar dari aplikasi selama ujian berlangsung!`);
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        catatPelanggaran("Menyembunyikan tab / pindah aplikasi");
+      }
+    });
+
+    window.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (document.activeElement && document.activeElement.tagName === "IFRAME") return;
+        if (!document.hasFocus()) {
+          catatPelanggaran("Layar ujian kehilangan fokus");
+        }
+      }, 200);
+    });
+
+    document.addEventListener("contextmenu", (e) => e.preventDefault());
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && ["c", "v", "u", "s", "p"].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    });
+
+    function perbaruiBadgePelanggaran() {
+      const badge = document.getElementById("lbl-pelanggaran");
+      badge.textContent = `Pelanggaran: ${jumlahPelanggaran} / ${MAX_PELANGGARAN}`;
+      if (jumlahPelanggaran > 0) {
+        badge.className = "bg-amber-100 text-amber-800 px-2.5 py-1 rounded font-semibold";
+      }
+      if (jumlahPelanggaran >= MAX_PELANGGARAN) {
+        badge.className = "bg-red-600 text-white px-2.5 py-1 rounded font-semibold";
+      }
+    }
+
+    function kunciLayarUjian(alasan) {
+      document.getElementById("lock-reason").textContent = alasan;
+      document.getElementById("lock-overlay").classList.remove("hidden");
+    }
+
+    async function bukaKunciPeserta() {
+      const pin = document.getElementById("input-unlock-pin").value;
+      if (pin === PIN_PENGAWAS) {
+        jumlahPelanggaran = 0;
+        perbaruiBadgePelanggaran();
+        document.getElementById("input-unlock-pin").value = "";
+        document.getElementById("lock-overlay").classList.add("hidden");
+
+        await tambahLogSesi(sesiAktif.sessionKey, {
+          violations: 0,
+          status: "MENGERJAKAN",
+          newLog: `${new Date().toLocaleTimeString("id-ID")} - Kunci dibuka oleh pengawas`
+        });
+      } else {
+        alert("PIN Pengawas salah!");
+      }
+    }
+
+    async function konfirmasiSelesai() {
+      if (!durasiTerpenuhi) {
+        alert("Waktu pelaksanaan ujian 90 menit belum selesai. Tombol selesai akan aktif setelah durasi 90 menit terpenuhi.");
+        return;
+      }
+      if (!confirm("Pastikan Anda sudah menekan tombol KIRIM (Submit) pada Google Form sebelum mengakhiri sesi. Lanjutkan?")) return;
+      if (intervalTimer) clearInterval(intervalTimer);
+      ujianBerlangsung = false;
+
+      await sbClient
+        .from("exam_sessions")
+        .update({
+          status: "SELESAI",
+          finished_at: new Date().toISOString()
+        })
+        .eq("session_key", sesiAktif.sessionKey);
+
+      alert("Sesi ujian selesai. Terima kasih.");
+      location.reload();
+    }
+
+    // ==========================================
+    // 4. PANEL PENGAWAS & SISA WAKTU 90 MENIT
+    // ==========================================
+    function bukaPanelPengawas() {
+      const pin = prompt("Masukkan PIN Pengawas / Admin:");
+      if (pin !== PIN_PENGAWAS) {
+        if (pin !== null) alert("PIN salah.");
+        return;
+      }
+      document.getElementById("view-login").classList.add("hidden");
+      document.getElementById("view-exam").classList.add("hidden");
+      document.getElementById("view-proctor").classList.remove("hidden");
+      muatDaftarToken();
+      muatTabelMonitoring();
+      subscribeMonitoringRealtime();
+
+      if (intervalTabelPengawas) clearInterval(intervalTabelPengawas);
+      intervalTabelPengawas = setInterval(() => {
+        renderBarisMonitoring();
+      }, 1000);
+    }
+
+    function tutupPanelPengawas() {
+      if (channelMonitoring) {
+        sbClient.removeChannel(channelMonitoring);
+      }
+      if (intervalTabelPengawas) {
+        clearInterval(intervalTabelPengawas);
+      }
+      location.reload();
+    }
+
+    function hitungTeksSisaWaktu(sesi) {
+      if (sesi.status === "SELESAI") {
+        return `<span class="text-slate-400 font-mono">Selesai</span>`;
+      }
+      if (!sesi.started_at) {
+        return `<span class="text-slate-400 font-mono">-</span>`;
+      }
+      const mulaiMs = new Date(sesi.started_at).getTime();
+      const selesaiMs = mulaiMs + (DURASI_DETIK * 1000);
+      const sisaDetik = Math.max(0, Math.floor((selesaiMs - Date.now()) / 1000));
+      const menit = Math.floor(sisaDetik / 60);
+      const detik = sisaDetik % 60;
+      const label = `${String(menit).padStart(2, "0")}:${String(detik).padStart(2, "0")}`;
+
+      if (sisaDetik === 0) {
+        return `<span class="text-red-600 font-mono font-bold">00:00 (Habis)</span>`;
+      }
+      if (sisaDetik <= 600) {
+        return `<span class="text-amber-600 font-mono font-bold">${label}</span>`;
+      }
+      return `<span class="text-slate-800 font-mono font-semibold">${label}</span>`;
+    }
+
+    function renderBarisMonitoring() {
+      const tbody = document.getElementById("tabel-monitoring");
+      if (!dataSesiPengawas || dataSesiPengawas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Belum ada peserta masuk.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      dataSesiPengawas.forEach((d) => {
+        let badgeColor = "bg-blue-100 text-blue-800";
+        if (d.status === "TERKUNCI") badgeColor = "bg-red-100 text-red-800 font-bold";
+        if (d.status === "SELESAI") badgeColor = "bg-emerald-100 text-emerald-800";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="p-3 font-mono">${d.nis}</td>
+          <td class="p-3 font-medium">${d.nama}</td>
+          <td class="p-3">${d.kelas}</td>
+          <td class="p-3">${d.mapel}</td>
+          <td class="p-3">${hitungTeksSisaWaktu(d)}</td>
+          <td class="p-3 font-bold ${d.violations > 0 ? 'text-red-600' : ''}">${d.violations}x</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded ${badgeColor}">${d.status}</span></td>
+          <td class="p-3">
+            <button onclick="resetPeserta('${d.session_key}')" class="text-blue-700 hover:underline">Reset</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("form-token").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const token = document.getElementById("cfg-token").value.trim().toUpperCase();
+      const mapel = document.getElementById("cfg-mapel").value.trim();
+      const formUrl = document.getElementById("cfg-url").value.trim();
+
+      const { error } = await sbClient
+        .from("exam_tokens")
+        .upsert({
+          token,
+          mapel,
+          form_url: formUrl,
+          aktif: true,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "token" });
+
+      if (error) {
+        alert("Gagal menyimpan token: " + error.message);
+        return;
+      }
+
+      e.target.reset();
+      muatDaftarToken();
+    });
+
+    async function muatDaftarToken() {
+      const container = document.getElementById("list-tokens");
+      const { data, error } = await sbClient
+        .from("exam_tokens")
+        .select("*")
+        .order("token", { ascending: true });
+
+      if (error) return;
+      container.innerHTML = "";
+      (data || []).forEach((d) => {
+        const chip = document.createElement("div");
+        chip.className = "flex items-center gap-2 bg-slate-100 border px-3 py-1.5 rounded-lg text-xs";
+        chip.innerHTML = `
+          <span class="font-mono font-bold text-blue-800">${d.token}</span>
+          <span>(${d.mapel})</span>
+          <button onclick="hapusToken('${d.token}')" class="text-red-600 font-bold ml-1">×</button>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    async function hapusToken(token) {
+      if (!confirm(`Hapus token ${token}?`)) return;
+      await sbClient.from("exam_tokens").delete().eq("token", token);
+      muatDaftarToken();
+    }
+
+    async function muatTabelMonitoring() {
+      const tbody = document.getElementById("tabel-monitoring");
+      const { data, error } = await sbClient
+        .from("exam_sessions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-600">Error: ${error.message}</td></tr>`;
+        return;
+      }
+
+      dataSesiPengawas = data || [];
+      renderBarisMonitoring();
+    }
+
+    function subscribeMonitoringRealtime() {
+      if (channelMonitoring) {
+        sbClient.removeChannel(channelMonitoring);
+      }
+      channelMonitoring = sbClient
+        .channel("exam_sessions_live")
+        .on("postgres_changes", { event: "*", schema: "public", table: "exam_sessions" }, () => {
+          muatTabelMonitoring();
+        })
+        .subscribe();
+    }
+
+    async function resetPeserta(sessionKey) {
+      if (!confirm("Reset status dan pelanggaran peserta ini?")) return;
+      await sbClient
+        .from("exam_sessions")
+        .update({ violations: 0, status: "MENGERJAKAN" })
+        .eq("session_key", sessionKey);
+      muatTabelMonitoring();
+    }
+
+    async function resetSemuaDataUjian() {
+      const konfirmasi = prompt("Ketik RESET untuk menghapus semua log peserta sesi ini:");
+      if (konfirmasi !== "RESET") return;
+      const { error } = await sbClient
+        .from("exam_sessions")
+        .delete()
+        .neq("session_key", "");
+
+      if (error) {
+        alert("Gagal mereset data: " + error.message);
+        return;
+      }
+      alert("Semua log peserta berhasil dibersihkan.");
+      muatTabelMonitoring();
+    }
+  </script>
+</body>
+</html>
