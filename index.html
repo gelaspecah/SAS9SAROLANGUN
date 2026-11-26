@@ -163,7 +163,7 @@
           class="border rounded-lg px-3 py-2 text-sm uppercase font-mono" />
         <input type="text" id="cfg-mapel" required placeholder="Nama Mata Pelajaran"
           class="border rounded-lg px-3 py-2 text-sm" />
-        <input type="url" id="cfg-url" required placeholder="Link Google Form (https://docs.google.com/forms/...)"
+        <input type="text" id="cfg-url" required placeholder="Tempel (Paste) Link Google Form"
           class="border rounded-lg px-3 py-2 text-sm" />
         <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 py-2 text-sm font-semibold">
           Simpan Token
@@ -283,7 +283,10 @@
           if (insertErr) throw insertErr;
         }
 
-        let formUrl = dataToken.form_url;
+        let formUrl = dataToken.form_url.trim();
+        if (!/^https?:\/\//i.test(formUrl)) {
+          formUrl = "https://" + formUrl;
+        }
         if (!formUrl.includes("embedded=true")) {
           formUrl += (formUrl.includes("?") ? "&" : "?") + "embedded=true";
         }
@@ -433,8 +436,18 @@
       }, 200);
     });
 
-    document.addEventListener("contextmenu", (e) => e.preventDefault());
+    function areaBebasPaste(target) {
+      if (!target || typeof target.closest !== "function") return false;
+      return Boolean(target.closest("#view-proctor, input, textarea"));
+    }
+
+    document.addEventListener("contextmenu", (e) => {
+      if (areaBebasPaste(e.target)) return;
+      e.preventDefault();
+    });
+
     document.addEventListener("keydown", (e) => {
+      if (areaBebasPaste(e.target)) return;
       if ((e.ctrlKey || e.metaKey) && ["c", "v", "u", "s", "p"].includes(e.key.toLowerCase())) {
         e.preventDefault();
       }
