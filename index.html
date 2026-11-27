@@ -12,10 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="SAS SMAN 9" />
   <meta name="mobile-web-app-capable" content="yes" />
 
-  <link id="pwa-icon" rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%231e3a8a'/%3E%3Ctext x='50%25' y='44%25' dominant-baseline='middle' text-anchor='middle' fill='%23ffffff' font-family='Arial,sans-serif' font-size='112' font-weight='bold'%3ESAS%3C/text%3E%3Ctext x='50%25' y='67%25' dominant-baseline='middle' text-anchor='middle' fill='%23fde047' font-family='Arial,sans-serif' font-size='64' font-weight='bold'%3ESMAN 9%3C/text%3E%3C/svg%3E" />
-  <link id="apple-touch-icon" rel="apple-touch-icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%231e3a8a'/%3E%3Ctext x='50%25' y='44%25' dominant-baseline='middle' text-anchor='middle' fill='%23ffffff' font-family='Arial,sans-serif' font-size='112' font-weight='bold'%3ESAS%3C/text%3E%3Ctext x='50%25' y='67%25' dominant-baseline='middle' text-anchor='middle' fill='%23fde047' font-family='Arial,sans-serif' font-size='64' font-weight='bold'%3ESMAN 9%3C/text%3E%3C/svg%3E" />
+  <link id="pwa-icon" rel="icon" type="image/jpeg" href="/logo-sman9.jpg" />
+  <link id="apple-touch-icon" rel="apple-touch-icon" href="/logo-sman9.jpg" />
   <link id="pwa-manifest" rel="manifest" href="" />
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -31,9 +29,12 @@
 
   <!-- HEADER SEKOLAH -->
   <header class="bg-blue-900 text-white shadow-md px-4 py-3 flex items-center justify-between no-print">
-    <div>
-      <h1 class="text-base md:text-lg font-bold tracking-wide">PORTAL SUMATIF AKHIR SEMESTER (SAS)</h1>
-      <p class="text-xs text-blue-200">SMA Negeri 9 Sarolangun · Durasi Terkunci 90 Menit</p>
+    <div class="flex items-center gap-3">
+      <img src="/logo-sman9.jpg" alt="Logo SMA Negeri 9 Sarolangun" class="w-10 h-10 object-contain rounded bg-white p-0.5" />
+      <div>
+        <h1 class="text-base md:text-lg font-bold tracking-wide">PORTAL SUMATIF AKHIR SEMESTER (SAS)</h1>
+        <p class="text-xs text-blue-200">SMA Negeri 9 Sarolangun · Durasi Terkunci 90 Menit</p>
+      </div>
     </div>
     <div class="flex items-center gap-2">
       <button id="btn-install-pwa" onclick="installAplikasiPwa()" class="hidden bg-amber-400 hover:bg-amber-500 text-slate-950 font-semibold text-xs px-3 py-1.5 rounded">
@@ -217,11 +218,7 @@
     let deferredInstallPrompt = null;
 
     (function setupPwa() {
-      const iconSvg =
-        "data:image/svg+xml," +
-        encodeURIComponent(
-          "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%231e3a8a'/><text x='50%25' y='44%25' dominant-baseline='middle' text-anchor='middle' fill='%23ffffff' font-family='Arial,sans-serif' font-size='112' font-weight='bold'>SAS</text><text x='50%25' y='67%25' dominant-baseline='middle' text-anchor='middle' fill='%23fde047' font-family='Arial,sans-serif' font-size='64' font-weight='bold'>SMAN 9</text></svg>"
-        );
+      const logoUrl = new URL("/logo-sman9.jpg", window.location.origin).href;
 
       const manifestData = {
         name: "Portal Ujian SAS - SMA Negeri 9 Sarolangun",
@@ -233,9 +230,9 @@
         theme_color: "#1e3a8a",
         icons: [
           {
-            src: iconSvg,
+            src: logoUrl,
             sizes: "512x512",
-            type: "image/svg+xml",
+            type: "image/jpeg",
             purpose: "any maskable"
           }
         ]
