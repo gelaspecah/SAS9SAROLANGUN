@@ -33,7 +33,7 @@
       <img src="/logo-sman9.jpg" alt="Logo SMA Negeri 9 Sarolangun" class="w-10 h-10 object-contain rounded bg-white p-0.5" />
       <div>
         <h1 class="text-base md:text-lg font-bold tracking-wide">PORTAL SUMATIF AKHIR SEMESTER (SAS)</h1>
-        <p class="text-xs text-blue-200">SMA Negeri 9 Sarolangun · Durasi Terkunci 90 Menit</p>
+        <p class="text-xs text-blue-200">SMA Negeri 9 Sarolangun · 6 Ruang Ujian · Durasi Terkunci 90 Menit</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
@@ -65,12 +65,25 @@
             class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-sm font-medium mb-1">Ruang</label>
+            <select id="input-ruang" required
+              class="w-full border border-slate-300 rounded-lg px-2.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600">
+              <option value="">Ruang</option>
+              <option value="Ruang 1">Ruang 1</option>
+              <option value="Ruang 2">Ruang 2</option>
+              <option value="Ruang 3">Ruang 3</option>
+              <option value="Ruang 4">Ruang 4</option>
+              <option value="Ruang 5">Ruang 5</option>
+              <option value="Ruang 6">Ruang 6</option>
+            </select>
+          </div>
           <div>
             <label class="block text-sm font-medium mb-1">Kelas</label>
             <select id="input-kelas" required
-              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600">
-              <option value="">Pilih Kelas</option>
+              class="w-full border border-slate-300 rounded-lg px-2.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600">
+              <option value="">Kelas</option>
               <option value="X E1">X E1</option>
               <option value="X E2">X E2</option>
               <option value="XI F1">XI F1</option>
@@ -80,9 +93,9 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">Token Ujian</label>
+            <label class="block text-sm font-medium mb-1">Token</label>
             <input type="text" id="input-token" required placeholder="TOKEN"
-              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm uppercase font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-600" />
+              class="w-full border border-slate-300 rounded-lg px-2.5 py-2 text-sm uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-600" />
           </div>
         </div>
 
@@ -101,6 +114,7 @@
     <div class="bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
       <div class="flex items-center gap-2 flex-wrap">
         <span class="font-semibold text-slate-800" id="lbl-peserta">-</span>
+        <span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-medium" id="lbl-ruang">-</span>
         <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-medium" id="lbl-mapel">-</span>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
@@ -144,8 +158,8 @@
             Sistem mendeteksi Anda meninggalkan halaman ujian berulang kali. Lapor ke pengawas ruang untuk membuka kembali akses.
           </p>
           <div class="space-y-3 text-left">
-            <label class="block text-xs uppercase tracking-wider text-red-200">Kode Buka Kunci Pengawas</label>
-            <input type="password" id="input-unlock-pin" placeholder="Masukkan PIN Pengawas"
+            <label class="block text-xs uppercase tracking-wider text-red-200">Kode Buka Kunci Pengawas Ruang</label>
+            <input type="password" id="input-unlock-pin" placeholder="Masukkan PIN Pengawas Ruang / Admin"
               class="w-full px-3 py-2 rounded bg-white text-slate-900 text-sm font-mono" />
             <button onclick="bukaKunciPeserta()"
               class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded text-sm">
@@ -161,21 +175,37 @@
   <section id="view-proctor" class="hidden flex-1 p-4 max-w-6xl w-full mx-auto space-y-4">
     <div class="bg-white rounded-xl shadow p-4 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 class="text-lg font-bold">Dashboard Pengawas & Pengaturan Token</h2>
-        <p class="text-xs text-slate-500">Durasi baku ujian: 90 menit per sesi peserta · Sisa waktu diperbarui otomatis.</p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="text-lg font-bold">Dashboard Pengawas</h2>
+          <span id="badge-ruang-pengawas" class="bg-blue-100 text-blue-900 text-xs font-bold px-2.5 py-0.5 rounded">
+            -
+          </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">Menampilkan peserta sesuai ruang pengawas · Durasi baku ujian: 90 menit.</p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <select id="filter-ruang-admin" onchange="renderBarisMonitoring()"
+          class="hidden border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white font-medium">
+          <option value="SEMUA">Semua Ruang (1–6)</option>
+          <option value="Ruang 1">Ruang 1</option>
+          <option value="Ruang 2">Ruang 2</option>
+          <option value="Ruang 3">Ruang 3</option>
+          <option value="Ruang 4">Ruang 4</option>
+          <option value="Ruang 5">Ruang 5</option>
+          <option value="Ruang 6">Ruang 6</option>
+        </select>
         <button onclick="tutupPanelPengawas()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1.5 rounded text-xs font-medium">
           Kembali ke Login
         </button>
-        <button onclick="resetSemuaDataUjian()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-medium">
+        <button id="btn-reset-semua" onclick="resetSemuaDataUjian()" class="hidden bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-medium">
           Reset Log Sesi
         </button>
       </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow p-4 border border-slate-200">
-      <h3 class="text-sm font-bold mb-3">Tambah / Aktifkan Token Mata Pelajaran</h3>
+    <!-- PENGATURAN TOKEN (KHUSUS ADMIN) -->
+    <div id="panel-kelola-token" class="hidden bg-white rounded-xl shadow p-4 border border-slate-200">
+      <h3 class="text-sm font-bold mb-3">Tambah / Aktifkan Token Mata Pelajaran (Admin)</h3>
       <form id="form-token" class="grid grid-cols-1 md:grid-cols-4 gap-3">
         <input type="text" id="cfg-token" required placeholder="Kode Token (misal: PJOK12)"
           class="border rounded-lg px-3 py-2 text-sm uppercase font-mono" />
@@ -194,6 +224,7 @@
       <table class="w-full text-left border-collapse text-xs">
         <thead class="bg-slate-100 text-slate-700 border-b">
           <tr>
+            <th class="p-3">Ruang</th>
             <th class="p-3">NIS</th>
             <th class="p-3">Nama Peserta</th>
             <th class="p-3">Kelas</th>
@@ -205,7 +236,7 @@
           </tr>
         </thead>
         <tbody id="tabel-monitoring" class="divide-y divide-slate-100">
-          <tr><td colspan="8" class="p-4 text-center text-slate-400">Belum ada peserta masuk.</td></tr>
+          <tr><td colspan="9" class="p-4 text-center text-slate-400">Belum ada peserta masuk.</td></tr>
         </tbody>
       </table>
     </div>
@@ -276,14 +307,23 @@
     }
 
     // ==========================================
-    // 1. KONFIGURASI SUPABASE & ATURAN DURASI
+    // 1. KONFIGURASI SUPABASE, PIN RUANG & DURASI
     // ==========================================
     const SUPABASE_URL = "https://jjhonomzzfxjrzghxdii.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_LYK0U2cAPdFeOnGz84SGzg_7FsZl9YI";
 
     const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const PIN_PENGAWAS = "9909";
+    const PIN_ADMIN = "9909";
+    const PIN_PER_RUANG = {
+      "1001": "Ruang 1",
+      "1002": "Ruang 2",
+      "1003": "Ruang 3",
+      "1004": "Ruang 4",
+      "1005": "Ruang 5",
+      "1006": "Ruang 6"
+    };
+
     const MAX_PELANGGARAN = 3;
     const DURASI_MENIT = 90;
     const DURASI_DETIK = DURASI_MENIT * 60;
@@ -298,6 +338,21 @@
     let channelMonitoring = null;
     let dataSesiPengawas = [];
     let intervalTabelPengawas = null;
+    let ruangPengawasAktif = null; // null = Admin (semua ruang), atau "Ruang 1".."Ruang 6"
+    let adalahAdmin = false;
+
+    function validasiPinPengawas(pin) {
+      if (!pin) return null;
+      const cleanPin = pin.trim();
+      if (cleanPin === PIN_ADMIN) {
+        return { isAdmin: true, ruang: null, label: "Admin (Semua Ruang)" };
+      }
+      if (PIN_PER_RUANG[cleanPin]) {
+        const ruang = PIN_PER_RUANG[cleanPin];
+        return { isAdmin: false, ruang, label: `Pengawas ${ruang}` };
+      }
+      return null;
+    }
 
     // ==========================================
     // 2. LOGIKA LOGIN & TIMER 90 MENIT
@@ -306,6 +361,7 @@
       e.preventDefault();
       const nis = document.getElementById("input-nis").value.trim();
       const nama = document.getElementById("input-nama").value.trim();
+      const ruang = document.getElementById("input-ruang").value;
       const kelas = document.getElementById("input-kelas").value;
       const token = document.getElementById("input-token").value.trim().toUpperCase();
       const errBox = document.getElementById("login-error");
@@ -337,6 +393,7 @@
         if (sesiErr) throw sesiErr;
 
         let startedAtMs = Date.now();
+        let ruangFinal = ruang;
 
         if (existing) {
           if (existing.status === "SELESAI") {
@@ -344,6 +401,15 @@
           }
           jumlahPelanggaran = existing.violations || 0;
           startedAtMs = existing.started_at ? new Date(existing.started_at).getTime() : Date.now();
+          ruangFinal = existing.ruang || ruang;
+
+          if (ruang && existing.ruang && existing.ruang !== ruang) {
+            await sbClient
+              .from("exam_sessions")
+              .update({ ruang })
+              .eq("session_key", sessionKey);
+            ruangFinal = ruang;
+          }
         } else {
           jumlahPelanggaran = 0;
           const nowIso = new Date(startedAtMs).toISOString();
@@ -353,6 +419,7 @@
               session_key: sessionKey,
               nis,
               nama,
+              ruang: ruangFinal,
               kelas,
               token,
               mapel: dataToken.mapel,
@@ -373,7 +440,7 @@
         }
 
         waktuSelesaiEpoch = startedAtMs + (DURASI_DETIK * 1000);
-        sesiAktif = { sessionKey, nis, nama, kelas, mapel: dataToken.mapel };
+        sesiAktif = { sessionKey, nis, nama, ruang: ruangFinal, kelas, mapel: dataToken.mapel };
         mulaiTampilanUjian(formUrl);
 
       } catch (err) {
@@ -389,6 +456,7 @@
       document.getElementById("view-login").classList.add("hidden");
       document.getElementById("view-exam").classList.remove("hidden");
       document.getElementById("lbl-peserta").textContent = `${sesiAktif.nama} (${sesiAktif.kelas})`;
+      document.getElementById("lbl-ruang").textContent = sesiAktif.ruang || "-";
       document.getElementById("lbl-mapel").textContent = sesiAktif.mapel;
       document.getElementById("gform-frame").src = formUrl;
 
@@ -552,7 +620,9 @@
 
     async function bukaKunciPeserta() {
       const pin = document.getElementById("input-unlock-pin").value;
-      if (pin === PIN_PENGAWAS) {
+      const akses = validasiPinPengawas(pin);
+
+      if (akses) {
         jumlahPelanggaran = 0;
         perbaruiBadgePelanggaran();
         document.getElementById("input-unlock-pin").value = "";
@@ -561,10 +631,10 @@
         await tambahLogSesi(sesiAktif.sessionKey, {
           violations: 0,
           status: "MENGERJAKAN",
-          newLog: `${new Date().toLocaleTimeString("id-ID")} - Kunci dibuka oleh pengawas`
+          newLog: `${new Date().toLocaleTimeString("id-ID")} - Kunci dibuka oleh ${akses.label}`
         });
       } else {
-        alert("PIN Pengawas salah!");
+        alert("PIN Pengawas Ruang / Admin salah!");
       }
     }
 
@@ -590,18 +660,35 @@
     }
 
     // ==========================================
-    // 4. PANEL PENGAWAS & SISA WAKTU 90 MENIT
+    // 4. PANEL PENGAWAS PER RUANG (1–6) & ADMIN
     // ==========================================
     function bukaPanelPengawas() {
-      const pin = prompt("Masukkan PIN Pengawas / Admin:");
-      if (pin !== PIN_PENGAWAS) {
-        if (pin !== null) alert("PIN salah.");
+      const pin = prompt("Masukkan PIN Pengawas Ruang (1001–1006) atau PIN Admin:");
+      if (pin === null) return;
+
+      const akses = validasiPinPengawas(pin);
+      if (!akses) {
+        alert("PIN salah. Gunakan PIN ruang (1001–1006) atau PIN admin.");
         return;
       }
+
+      adalahAdmin = akses.isAdmin;
+      ruangPengawasAktif = akses.ruang;
+
       document.getElementById("view-login").classList.add("hidden");
       document.getElementById("view-exam").classList.add("hidden");
       document.getElementById("view-proctor").classList.remove("hidden");
-      muatDaftarToken();
+      document.getElementById("badge-ruang-pengawas").textContent = akses.label;
+
+      document.getElementById("panel-kelola-token").classList.toggle("hidden", !adalahAdmin);
+      document.getElementById("filter-ruang-admin").classList.toggle("hidden", !adalahAdmin);
+      document.getElementById("btn-reset-semua").classList.toggle("hidden", !adalahAdmin);
+
+      if (adalahAdmin) {
+        document.getElementById("filter-ruang-admin").value = "SEMUA";
+        muatDaftarToken();
+      }
+
       muatTabelMonitoring();
       subscribeMonitoringRealtime();
 
@@ -644,21 +731,37 @@
       return `<span class="text-slate-800 font-mono font-semibold">${label}</span>`;
     }
 
+    function getDataTersaringRuang() {
+      if (!Array.isArray(dataSesiPengawas)) return [];
+      if (!adalahAdmin && ruangPengawasAktif) {
+        return dataSesiPengawas.filter((d) => d.ruang === ruangPengawasAktif);
+      }
+      const pilihanFilter = document.getElementById("filter-ruang-admin")?.value || "SEMUA";
+      if (pilihanFilter !== "SEMUA") {
+        return dataSesiPengawas.filter((d) => d.ruang === pilihanFilter);
+      }
+      return dataSesiPengawas;
+    }
+
     function renderBarisMonitoring() {
       const tbody = document.getElementById("tabel-monitoring");
-      if (!dataSesiPengawas || dataSesiPengawas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Belum ada peserta masuk.</td></tr>`;
+      const daftar = getDataTersaringRuang();
+
+      if (!daftar || daftar.length === 0) {
+        const ketRuang = !adalahAdmin && ruangPengawasAktif ? ` di ${ruangPengawasAktif}` : "";
+        tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-400">Belum ada peserta masuk${ketRuang}.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = "";
-      dataSesiPengawas.forEach((d) => {
+      daftar.forEach((d) => {
         let badgeColor = "bg-blue-100 text-blue-800";
         if (d.status === "TERKUNCI") badgeColor = "bg-red-100 text-red-800 font-bold";
         if (d.status === "SELESAI") badgeColor = "bg-emerald-100 text-emerald-800";
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
+          <td class="p-3 font-semibold text-blue-900">${d.ruang || "-"}</td>
           <td class="p-3 font-mono">${d.nis}</td>
           <td class="p-3 font-medium">${d.nama}</td>
           <td class="p-3">${d.kelas}</td>
@@ -676,6 +779,7 @@
 
     document.getElementById("form-token").addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (!adalahAdmin) return;
       const token = document.getElementById("cfg-token").value.trim().toUpperCase();
       const mapel = document.getElementById("cfg-mapel").value.trim();
       const formUrl = document.getElementById("cfg-url").value.trim();
@@ -721,6 +825,7 @@
     }
 
     async function hapusToken(token) {
+      if (!adalahAdmin) return;
       if (!confirm(`Hapus token ${token}?`)) return;
       await sbClient.from("exam_tokens").delete().eq("token", token);
       muatDaftarToken();
@@ -734,7 +839,7 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-600">Error: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-red-600">Error: ${error.message}</td></tr>`;
         return;
       }
 
@@ -764,6 +869,7 @@
     }
 
     async function resetSemuaDataUjian() {
+      if (!adalahAdmin) return;
       const konfirmasi = prompt("Ketik RESET untuk menghapus semua log peserta sesi ini:");
       if (konfirmasi !== "RESET") return;
       const { error } = await sbClient
