@@ -663,12 +663,12 @@
     // 4. PANEL PENGAWAS PER RUANG (1–6) & ADMIN
     // ==========================================
     function bukaPanelPengawas() {
-      const pin = prompt("Masukkan PIN Pengawas Ruang (1001–1006) atau PIN Admin:");
+      const pin = prompt("Masukkan PIN Pengawas Ruang atau PIN Admin:");
       if (pin === null) return;
 
       const akses = validasiPinPengawas(pin);
       if (!akses) {
-        alert("PIN salah. Gunakan PIN ruang (1001–1006) atau PIN admin.");
+        alert("PIN salah. Gunakan PIN ruang atau PIN admin.");
         return;
       }
 
